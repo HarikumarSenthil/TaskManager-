@@ -34,6 +34,7 @@ const TaskManager = () => {
   };
 
   const handleEdit = (task: { id: string; name: string; description: string; priority: string }) => {
+    console.log("Selected Task for Editing:", task); 
     setSelectedTask(task);
     setIsModalOpen(true);
   };
@@ -47,7 +48,6 @@ const TaskManager = () => {
     }
   };
 
-  
   const filteredTasks = tasks.filter(
     (task) =>
       task.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -61,7 +61,6 @@ const TaskManager = () => {
       inputComplete={true}
     >
       <div className="task-manager">
-      
         <Input
           name="text"
           placeholder="Search by task name or description"
@@ -75,7 +74,6 @@ const TaskManager = () => {
           setIsModalOpen(true);
         }}>Add Task</Button>
 
-    
         <TaskList tasks={filteredTasks} onEdit={handleEdit} onDelete={handleDelete} />
 
         {isModalOpen && (

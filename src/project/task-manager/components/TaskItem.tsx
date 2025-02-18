@@ -1,5 +1,3 @@
-// src/project/task-manager/components/TaskItem.tsx
-
 import React from "react";
 import Button from "@/shared-components/ui/Button";
 import Card from "@/shared-components/components/Card";
@@ -19,9 +17,13 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, onEdit, onDelete }) => {
       children: "Edit Task",
     },
   ];
-  console.log("Task Value :", task)
 
-  const config = {};
+  // Assigning color based on priority
+  const priorityColor = task.priority === "high"
+    ? "text-red-500"
+    : task.priority === "medium"
+    ? "text-yellow-500"
+    : "text-green-500";
 
   return (
     <Card
@@ -30,7 +32,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, onEdit, onDelete }) => {
       deleteHandler={() => onDelete(task.id)}
       showDeleteIcon={true}
       loggedinRole="admin"
-      config={config}
+      config={{}}
       columns={1}
       gridCols={1}
       noBorder={false}
@@ -38,12 +40,11 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, onEdit, onDelete }) => {
     >
       <div className="text-lg font-bold">Name: {task.name}</div>
       <div className="text-sm text-gray-600">Description: {task.description}</div>
+
       {task.priority && (
         <div className="text-sm text-gray-500 mt-2">
           <strong>Priority: </strong>
-          <span
-            className={`text-${task.priority === "high" ? "red" : task.priority === "medium" ? "yellow" : "green"}-500`}
-          >
+          <span className={`${priorityColor}`}>
             {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)} 
           </span>
         </div>

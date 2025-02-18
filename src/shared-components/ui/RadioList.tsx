@@ -51,10 +51,9 @@ const RadioList = ({
               name={name}
               label={radio.label}
               value={radio.value}
-              selectedChecked={checked === radio.value ? true : false}
+              checked={checked}
               onChange={onChange}
               onBlur={onBlur}
-              checked={radio.defaultChecked}
               disabled={disabled}
               {...props}
             />
