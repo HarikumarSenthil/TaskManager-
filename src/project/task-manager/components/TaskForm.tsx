@@ -35,7 +35,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSave, onCancel }) => {
       setFormData({
         name: task.name,
         description: task.description,
-        priority: task.priority || "low", // Ensure priority is set correctly
+        priority: task.priority || "low", 
       });
     } else {
       setFormData({ name: "", description: "", priority: "low" });
@@ -59,22 +59,22 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSave, onCancel }) => {
 
     const validationErrors = validate();
     if (Object.keys(validationErrors).length > 0) {
-      alert(Object.values(validationErrors).join("\n"));
       return;
     }
 
-    console.log("Form Data on Submit:", formData); // Check if priority is included
+    console.log("Form Data on Submit:", formData);
     onSave(formData.name, formData.description, formData.priority);
   };
 
   return (
+    
     <FormRender
       formHeading="Manage Task"
       headingStyle="text-center text-[#006400] mt-5"
       formLabelStyle="text-base font-bold mb-2"
       formData={formData}
       formColumn={1}
-      formStyle="px-8 my-10 max-lg:px-4 max-w-2xl mx-auto"
+      formStyle="w-96 mt-2"
       btnConfig={{
         label: task ? "Save Task" : "Add Task",
         className: "w-full fully-rounded p-3 mt-5"
@@ -82,6 +82,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSave, onCancel }) => {
       initialStaticData={{ name: "", description: "", priority: "low" }}
       submitForm={handleSubmit}
     >
+      <label> Name</label>
       <Input
         name="name"
         value={formData.name}
@@ -89,6 +90,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSave, onCancel }) => {
         placeholder="Enter task name"
         error={errors.name}
       />
+      <label> Description</label>
       <Input
         name="description"
         value={formData.description}
@@ -96,6 +98,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSave, onCancel }) => {
         placeholder="Enter task description"
         error={errors.description}
       />
+      <label> Task Priority</label>
       <div className="flex space-x-4 mt-2">
         <RadioButton
           id="priority-low"
@@ -123,14 +126,12 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSave, onCancel }) => {
         />
       </div>
       <div className="flex space-x-4">
-        <Button type="submit" size="large" variant="primary">
-          {task ? "Save Task" : "Add Task"}
-        </Button>
         <Button type="button" size="large" variant="secondary" onClick={onCancel}>
           Cancel
         </Button>
       </div>
     </FormRender>
+
   );
 };
 
