@@ -1,7 +1,4 @@
 import React, { useState, useEffect } from "react";
-import Input from "@/shared-components/ui/Input";
-import Button from "@/shared-components/ui/Button";
-import RadioButton from "@/shared-components/ui/RadioButton";
 import FormRender from "@/shared-components/ui/FormRender";
 import useFormValidation from "@/shared-components/components/useFormValidation";
 
@@ -47,11 +44,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSave, onCancel }) => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handlePriorityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { value } = e.target;
-    setFormData((prev) => ({ ...prev, priority: value }));
+    validate(); 
   };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -66,72 +59,48 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSave, onCancel }) => {
     onSave(formData.name, formData.description, formData.priority);
   };
 
+  const formFields: {
+    name: string;
+    type: "text"  | "radio"; 
+    options?: { value: string; label: string }[];
+  }[] = [
+    {
+      name: "name", 
+      type: "text", 
+    },
+    {
+      name: "description", 
+      type: "text", 
+    },
+    {
+      name: "priority", 
+      type: "radio", 
+      options: [
+        { value: "low", label: "Low" },
+        { value: "medium", label: "Medium" },
+        { value: "high", label: "High" },
+      ],
+    },
+  ];
+
   return (
-    
     <FormRender
       formHeading="Manage Task"
       headingStyle="text-center text-[#006400] mt-5"
       formLabelStyle="text-base font-bold mb-2"
       formData={formData}
+      formFields={formFields}
       formColumn={1}
       formStyle="w-96 mt-2"
       btnConfig={{
         label: task ? "Save Task" : "Add Task",
         className: "w-full fully-rounded p-3 mt-5"
       }}
-      initialStaticData={{ name: "", description: "", priority: "low" }}
       submitForm={handleSubmit}
-    >
-      <label> Name</label>
-      <Input
-        name="name"
-        value={formData.name}
-        onChange={handleChange}
-        placeholder="Enter task name"
-        error={errors.name}
-      />
-      <label> Description</label>
-      <Input
-        name="description"
-        value={formData.description}
-        onChange={handleChange}
-        placeholder="Enter task description"
-        error={errors.description}
-      />
-      <label> Task Priority</label>
-      <div className="flex space-x-4 mt-2">
-        <RadioButton
-          id="priority-low"
-          name="priority"
-          value="low"
-          checked={formData.priority === "low"}
-          onChange={handlePriorityChange}
-          label="Low"
-        />
-        <RadioButton
-          id="priority-medium"
-          name="priority"
-          value="medium"
-          checked={formData.priority === "medium"}
-          onChange={handlePriorityChange}
-          label="Medium"
-        />
-        <RadioButton
-          id="priority-high"
-          name="priority"
-          value="high"
-          checked={formData.priority === "high"}
-          onChange={handlePriorityChange}
-          label="High"
-        />
-      </div>
-      <div className="flex space-x-4">
-        <Button type="button" size="large" variant="secondary" onClick={onCancel}>
-          Cancel
-        </Button>
-      </div>
-    </FormRender>
-
+      onChange={handleChange}
+      onCancel={onCancel}
+      errors={errors}
+    />
   );
 };
 
