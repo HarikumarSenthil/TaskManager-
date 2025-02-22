@@ -12,26 +12,25 @@ const TaskManager = () => {
   const [selectedTask, setSelectedTask] = useState<{ id: string; name: string; description: string; priority: string } | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const addTask = (name: string, description: string, priority: string) => {
+  const addTask = (taskData: { name: string; description: string; priority: string }) => {
     const newTask = {
       id: `${tasks.length + 1}`,
-      name,
-      description,
-      priority,
+      ...taskData,
     };
     setTasks([...tasks, newTask]);
-    setIsModalOpen(false); 
+    setIsModalOpen(false);
   };
-
-  const editTask = (name: string, description: string, priority: string) => {
+  
+  const editTask = (taskData: { name: string; description: string; priority: string }) => {
     if (selectedTask) {
       const updatedTasks = tasks.map((task) =>
-        task.id === selectedTask.id ? { ...task, name, description, priority } : task
+        task.id === selectedTask.id ? { ...task, ...taskData } : task
       );
       setTasks(updatedTasks);
-      setIsModalOpen(false); 
+      setIsModalOpen(false);
     }
   };
+  
 
   const handleEdit = (task: { id: string; name: string; description: string; priority: string }) => {
     console.log("Selected Task for Editing:", task); 
@@ -48,11 +47,11 @@ const TaskManager = () => {
     }
   };
 
-  const filteredTasks = tasks.filter(
-    (task) =>
-      task.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      task.description.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredTasks = tasks.filter((task) =>
+    (typeof task.name === "string" && task.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+    (typeof task.description === "string" && task.description.toLowerCase().includes(searchQuery.toLowerCase()))
   );
+  
 
   return (
     <SideBarMainLayout

@@ -1,105 +1,147 @@
-import React, { useState, useEffect } from "react";
-import FormRender from "@/shared-components/ui/FormRender";
-import useFormValidation from "@/shared-components/components/useFormValidation";
+import React, { useEffect } from "react";
+import { useMemo } from "react";
+import FormRender from "@/utils/form/formRender";
+import { useValidation } from "@/utils/validation/hooks";
+import validationMessages from "@/utils/validation/validationMessages";
 
-interface TaskFormProps {
-  task: { name: string; description: string; priority: string } | null;
-  onSave: (name: string, description: string, priority: string) => void;
-  onCancel: () => void;
+interface Task {
+  name: string;
+  description: string;
+  priority: string;
 }
 
+interface TaskFormProps {
+  task: Task | null;
+  onSave: (taskData: Task) => void;
+  onCancel: () => void;
+}
 const TaskForm: React.FC<TaskFormProps> = ({ task, onSave, onCancel }) => {
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    priority: "low"
-  });
+  const initialData = useMemo(() => ({
+    name: task?.name || "",
+    description: task?.description || "",
+    priority: task?.priority || "medium",
+  }), [task]);
 
-  const taskFormValidations = {
+
+  const taskValidations = {
     name: {
-      required: { value: true, message: "Task name is required" }
+      required: { value: true, message: validationMessages.isEmpty },
+      pattern: { type: "name", message: validationMessages.isOrganisation },
     },
     description: {
-      required: { value: true, message: "Task description is required" }
+      required: { value: true, message: validationMessages.isEmpty },
+      pattern: { type: "text", message: validationMessages.isText },
     },
     priority: {
-      required: { value: true, message: "Priority selection is required" }
-    }
+      required: { value: true, message: validationMessages.isEmpty },
+    },
   };
 
+
+  const [
+    errors,
+    values,
+    touched,
+    markAllTouched,
+    fieldDomRefs,
+    handleChange,
+    handleBlur,
+    resetForm,
+    validateFormData,
+    setErrors,
+    updateFormErrors,
+  ] = useValidation(initialData, taskValidations, []);
   useEffect(() => {
     if (task) {
-      setFormData({
+      setErrors({});    
+      resetForm({
         name: task.name,
         description: task.description,
-        priority: task.priority || "low", 
+        priority: task.priority,
       });
-    } else {
-      setFormData({ name: "", description: "", priority: "low" });
     }
-  }, [task]);
-
-  const { errors, validate } = useFormValidation(formData, taskFormValidations);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    validate(); 
+  }, [task]); 
+  
+  const handleSubmit = async (formData: any) => {
+  
+ 
+    onSave(formData);
+  
+   
+    return formData;
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    const validationErrors = validate();
-    if (Object.keys(validationErrors).length > 0) {
-      return;
-    }
-
-    console.log("Form Data on Submit:", formData);
-    onSave(formData.name, formData.description, formData.priority);
-  };
-
-  const formFields: {
-    name: string;
-    type: "text"  | "radio"; 
-    options?: { value: string; label: string }[];
-  }[] = [
-    {
-      name: "name", 
-      type: "text", 
+  
+  
+  
+  const formFields = {
+    name: {
+      id: "task-name",
+      fieldName: "name",
+      elementType: "FormInput",
+      class: "form-grid",
+      type: "text",
+      placeholder: "Enter task name",
+      visible: true,
+      onChange: handleChange,
+      onBlur: handleBlur,
+      value: values.name,
+      error: errors.name,
     },
-    {
-      name: "description", 
-      type: "text", 
+    description: {
+      id: "task-description",
+      fieldName: "description",
+      elementType: "FormTextarea",
+      class: "form-grid",
+      placeholder: "Enter task description",
+      visible: true,
+      onChange: handleChange,
+      onBlur: handleBlur,
+      value: values.description,
+      error: errors.description,
     },
-    {
-      name: "priority", 
-      type: "radio", 
+    priority: { 
+      id: "task-priority",
+      fieldName: "priority",
+      elementType: "FormDropdown", 
+      class: "form-grid",
       options: [
-        { value: "low", label: "Low" },
-        { value: "medium", label: "Medium" },
-        { value: "high", label: "High" },
-      ],
-    },
-  ];
+        { id: "low", label: "Low", value: "Low" },
+        { id: "medium", label: "Medium", value: "Medium" },
+        { id: "high", label: "High", value: "High" }
+      ], 
+      visible: true,
+      onChange: handleChange,
+      onBlur: handleBlur,
+      value: values.priority, 
+      error: errors.priority,
+    }
+  };
 
   return (
     <FormRender
       formHeading="Manage Task"
       headingStyle="text-center text-[#006400] mt-5"
       formLabelStyle="text-base font-bold mb-2"
-      formData={formData}
-      formFields={formFields}
+      formData={formFields}
       formColumn={1}
-      formStyle="w-96 mt-2"
-      btnConfig={{
-        label: task ? "Save Task" : "Add Task",
-        className: "w-full fully-rounded p-3 mt-5"
-      }}
+      formStyle="w-96"
+      initialStaticData={values}
+      btnConfig={[
+        {
+          type: "submit",
+          children: task ? "Save Task" : "Add Task",
+          className: "w-full fully-rounded p-3 mt-5",
+        },
+        {
+          type: "button",
+          children: "Cancel",
+          className: "w-full fully-rounded p-3 mt-5",
+          onClick: onCancel,
+        },
+      ]}
       submitForm={handleSubmit}
-      onChange={handleChange}
-      onCancel={onCancel}
-      errors={errors}
+      validations={taskValidations}
     />
   );
 };

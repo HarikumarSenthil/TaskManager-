@@ -327,37 +327,51 @@ export const validateFormField = (
   return fieldErrors;
 };
 
-export const validateForm = (
-  values: any,
-  validationRules: any,
-  visibilityArr: any
-) => {
-  let formErrors: any = {};
-  Object.keys(values).map((key) => {
+export const validateForm = (values: any, validationRules: any, visibilityArr: any) => {
+  let formErrors: Record<string, any> = {};
+
+  Object.keys(values).forEach((key) => {
     if (!visibilityArr?.includes(key)) {
       const value = values[key];
-      let arr = [];
-      const valueArr: Array<any> = [];
-      let fieldErr: any = {};
-      if (Object.keys(fieldErr).length > 0) {
-        Object.keys(fieldErr).map((el) => {
-          const trueValuesArr = valueArr.filter((value) => value === true);
-          const arrIndex = values[key].length - 1;
-          if (trueValuesArr.length > 1) {
-            formErrors[key][arrIndex][el] = fieldErr[el].duplicateTrue;
-          } else if (trueValuesArr.length === 0) {
-            formErrors[key][arrIndex][el] = fieldErr[el].allFalse;
+      let fieldErrors: Record<string, any> = {};
+
+      // Check if validation rules exist for the field
+      if (validationRules[key]) {
+        const rules = validationRules[key];
+
+        // 🔹 Required Field Check
+        if (rules.required && (!value || value.trim() === "")) {
+          fieldErrors[key] = `${key} is required`;
+        }
+
+        // 🔹 Minimum Length Check
+        if (rules.minLength && value.length < rules.minLength) {
+          fieldErrors[key] = `${key} must be at least ${rules.minLength} characters long`;
+        }
+
+        // 🔹 Maximum Length Check
+        if (rules.maxLength && value.length > rules.maxLength) {
+          fieldErrors[key] = `${key} must not exceed ${rules.maxLength} characters`;
+        }
+
+        // 🔹 Pattern Check (Fix for `.test()` error)
+        if (rules.pattern instanceof RegExp) {
+          if (!rules.pattern.test(value)) {
+            fieldErrors[key] = `Invalid ${key} format`;
           }
-        });
+        } else if (rules.pattern) {
+          console.warn(`Invalid pattern for ${key}:`, rules.pattern);
+        }
       }
-      validationLogic(key, value, validationRules, formErrors, values);
+
+      // Assign field errors to `formErrors` if any exist
+      if (Object.keys(fieldErrors).length > 0) {
+        formErrors[key] = fieldErrors[key]; // Directly store error message
+      }
     }
   });
-  const isEmpty = Object.keys(formErrors).every((key) => {
-    return formErrors[key] === "";
-  });
-  if (isEmpty) {
-    formErrors = {};
-  }
-  return formErrors;
+
+  return Object.keys(formErrors).length > 0 ? formErrors : {}; // Return empty object if no errors
 };
+
+

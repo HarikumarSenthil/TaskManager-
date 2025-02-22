@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import useDeepEffect from "./useDeepEffect";
-import { validateForm, validateFormField } from "..";
+import { validateForm, validateFormField } from "../";
 import validationUtils from "../validationUtils";
 
 const useValidation: any = (
@@ -12,7 +12,7 @@ const useValidation: any = (
   const data = Array.isArray(formData) ? [...formData] : { ...formData };
   const [values, setValues] = useState(data);
   const [array, setArray] = useState<any>();
-  const [errors, setErrors] = useState({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState({});
   const ref = useRef();
   useDeepEffect(() => {
@@ -32,7 +32,7 @@ const useValidation: any = (
     });
   }, [data]);
 
-  const fieldDomRefs: any = {}; // use to focus fields upon error
+  const fieldDomRefs: any = {}; 
 
   const init = () => {
     initFieldDomRefs();
@@ -46,13 +46,18 @@ const useValidation: any = (
   init();
 
   const getFieldData = (event: any) => {
+    if (!event || !event.target) {
+      
+      return { name: "", value: "" };
+    }
+  
     const { name, value, type, checked } = event.target;
     const fieldName = name;
-    // const fieldValue = type === "checkbox" ? checked : value;
-    const fieldValue = value;
-    return { fieldName, fieldValue, type, checked };
+    const fieldValue = type === "checkbox" ? checked : value;
+  
+    return { fieldName, fieldValue,type,checked };
   };
-
+  
   const handleChange = (event: any) => {
     const { fieldName, fieldValue, type, checked } = getFieldData(event);
 
@@ -80,7 +85,7 @@ const useValidation: any = (
   const handleBlur = async (event: any) => {
      event?.preventDefault();
     if (event?.relatedTarget && event?.relatedTarget.type === "submit") {
-      return; // prevent field level validation on submit click
+      return; 
     }
     const { fieldName, fieldValue } = getFieldData(event);
     updateTouched(fieldName);
@@ -121,19 +126,26 @@ const useValidation: any = (
     setTouched(touchedData);
   };
 
-  const validateFormData = async () => {
-    let isValid = false;
+  const validateFormData = async ()=> {  
     const valuesToValidate = { ...values };
-    const validationErrors = await validateForm(
-      valuesToValidate,
-      validationRules,
-      visibilityArr
-    );
-    setErrors(validationErrors);
+
+    console.log("Validating values:", valuesToValidate);
+
+    const validationErrors = await validateForm(valuesToValidate, validationRules, visibilityArr);
+    console.log("Validation Errors:", validationErrors);
+
+    setErrors(validationErrors);  
+
     focusFirstFieldWithError(validationErrors);
-    isValid = validationUtils.isEmpty(validationErrors);
-    return isValid;
-  };
+
+    let isValid = Object.keys(validationErrors).length === 0;
+    console.log("IsValid",isValid) 
+    return isValid
+};
+
+
+
+
 
   const focusFirstFieldWithError = (validationErrors: any) => {
     if (!validationUtils.isEmpty(validationErrors)) {
@@ -157,8 +169,8 @@ const useValidation: any = (
     errors,
     values,
     touched,
-    fieldDomRefs,
     markAllTouched,
+    fieldDomRefs,
     handleChange,
     handleBlur,
     resetForm,

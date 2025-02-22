@@ -1,79 +1,65 @@
 "use client";
-import { useEffect, useState } from "react";
+
+import React, { useEffect, useState } from "react";
 import Form from "../../shared-components/ui/Form";
 import { useValidation } from "../validation/hooks";
 import Button from "@/shared-components/ui/Button";
-import { decodeUserToken } from "..";
 
-const FormRender = ({
+interface FormField {
+  id: string;
+  class?: string;
+  fieldName: string;
+  elementType: string;
+  type?: string;
+  placeholder?: string;
+  options?: string[] | { id: string; label: string; value: string; }[];
+  visible?: boolean;
+  dependencies?: any[];
+}
+
+interface FormRenderProps {
+  formHeading?: string;
+  formSubHeading?: string;
+  formData: Record<string, FormField>;
+  formLabelStyle?: string;
+  formStyle?: string;
+  formColumn?: number;
+  headingStyle?: string;
+  initialStaticData: Record<string, any>;
+  btnConfig?: any[];
+  btnStyle?: string;
+  validations?: any;
+  resetFormHandler?: () => Promise<void>;
+  submitForm?: (values: Record<string, any>) => Promise<any>;
+  buttonPlace?: boolean;
+}
+
+const FormRender: React.FC<FormRenderProps> = ({
   formHeading,
   formSubHeading,
   formData,
   formLabelStyle = "text-base mb-4",
-  formColumn,
+  formColumn = 1,
   headingStyle,
   formStyle,
   btnConfig,
   btnStyle,
   initialStaticData,
   validations,
-  updatedState,
-  customUpdatedState,
-  autoCalculatedVals,
   resetFormHandler,
   submitForm,
-  className,
-  showNoLabel = false,
   buttonPlace = false,
-}: {
-  formHeading?: string;
-  formSubHeading?: string;
-  formData: any;
-  formLabelStyle?: string;
-  formStyle?: string;
-  formColumn?: number;
-  headingStyle?: string;
-  initialStaticData: any;
-  initialCustomStaticData?: any;
-  btnStyle?: string;
-  btnConfig?: any;
-  formKeyDependent?: string;
-  validations?: any;
-  updatedState?: any;
-  customUpdatedState?: any;
-  autoCalculatedVals?: any;
-  acknowledgementData?: any;
-  formResponse?: any;
-  editForm?: boolean;
-  submitForm?: any;
-  resetFormHandler?: () => any;
-  getFormVals?: (_: any) => any;
-  showNoLabel?: boolean;
-  buttonPlace?: boolean;
-  className?: string;
 }) => {
-  const [updatedData, setUpdatedData] = useState<any>(formData);
-  const { role } = decodeUserToken();
+  const [updatedData, setUpdatedData] = useState<Record<string, FormField>>(formData);
 
   useEffect(() => {
     setUpdatedData(formData);
   }, [formData]);
 
-  const visibilityArr: any = [];
-
-  Object.values(updatedData).forEach((input: any) => {
-    if (input.elementType !== "ComponentFormButton") {
-      if (input.visible === false) {
-        visibilityArr.push(input.name);
-      }
-    }
-  });
-
   const [
     errors,
     values,
     touched,
-    fieldDomRefs,
     markAllTouched,
     handleChange,
     handleBlur,
@@ -81,229 +67,134 @@ const FormRender = ({
     validateFormData,
     setValues,
     setErrors,
-    updateFormErrors,
-  ] = useValidation(
-    initialStaticData,
-    validations,
-    visibilityArr,
-    autoCalculatedVals
-  );
+  ] = useValidation(initialStaticData, validations, []);
 
-  // const markFieldsTouched = () => {
-  //     const touchedData = {};
-  //     setFieldTouched(touchedData);
-  // };
+  useEffect(() => {
 
-  const handleSubmit = async (event: any) => {
-    event.preventDefault();
-    setErrors({});
-    markAllTouched();
-    // markFieldsTouched();
-    let isValid = await validateFormData();
-    if (!isValid) {
+    if (initialStaticData) {
+      setValues((prevValues: Record<string, any>) => ({
+        ...prevValues,
+        ...initialStaticData,
+      }));
+    }
+  }, []);
+
+  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    if (!event?.target) {
+      console.warn("Invalid event in handleInputChange", event);
       return;
     }
-    if (submitForm) {
-      // dispatch<any>(apiCallStarted());
-      const res = await submitForm(values);
-      if (!res?.errors) {
-        resetForm();
-      }
-      // dispatch<any>(apiCallResolved());
-      return res;
+  
+    const { name, type, value } = event.target;
+    const formattedKey = name.trim().replace(/\s+/g, "_");
+  
+    console.log("CHECKING VALUES", name, "Value:", value);
+  
+    setValues((prevValues: Record<string,any>) => {
+      const updatedValues = {
+        ...prevValues,
+        [formattedKey]: value, 
+      };
+  
+      console.log("Updated State:", updatedValues); 
+  
+      return updatedValues;
+    });
+  };
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    console.log("ValidationForm Results!!!!.....",)
+    if (!submitForm) {
+      return;
+    }
+    length = await validateFormData();
+     const Errorlength = Object.keys(errors).length
+  
+    if (Errorlength > 0) {
+      markAllTouched(); 
+      setErrors(errors); 
+      console.log("Errors", errors)
+      console.log("LENGTH VALUE",errors.length )
+      return;
+    }
+  
+    console.log("Form is valid, submitting with values:", values);
+  
+    try {
+      const response = await submitForm(values);
+      console.log("Form submitted successfully:", response);
+    } catch (error) {
+      console.error("Error in submitForm:", error);
     }
   };
+  
+  
+  
 
+  
   const resetDataHandler = async () => {
     if (resetFormHandler) {
-      // dispatch<any>(apiCallStarted());
       await resetFormHandler();
-      await resetForm();
-      // dispatch<any>(apiCallResolved());
-    } else {
-      await resetForm();
     }
+    resetForm();
   };
 
-  const formRender = (formDataList: any, GridClass: any, index: number) => {
-    const visibilityHandler = () => {
-      if (formDataList?.dependencies) {
-        formDataList.dependencies.forEach((item: any) => {
-          let filterField: any = () =>
-            Object.values(updatedData).filter((el: any) => {
-              return el.name === item.field;
-            });
-          const fieldToBeHidden = filterField();
-          if (
-            values[formDataList?.name] &&
-            Array.isArray(item?.values) &&
-            !item.values.includes(values[formDataList.name])
-          ) {
-            fieldToBeHidden[0].visible = false;
-            visibilityArr.push(fieldToBeHidden[0].name);
-          }
-        });
-      }
-    };
-    visibilityHandler();
-    let form =
-      Object.keys(formDataList).length > 0 ? (
-        <div className={`grid  ${GridClass}`}>
-          {Object.keys(formDataList)?.map((formEle, index) => {
+  return (
+    <div className="bg-white p-6 mt-2">
+      {formHeading && <h3 className={`font-bold text-xl mb-4 ${headingStyle}`}>{formHeading}</h3>}
+      {formSubHeading && (
+        <h3 className={`font-bold text-base tracking-wide text-secondary mb-10 ${headingStyle}`}>
+          {formSubHeading}
+        </h3>
+      )}
+
+      <form noValidate className={`${formStyle}`} onSubmit={handleSubmit}>
+        <div className={`grid grid-cols-${formColumn} gap-6`}>
+          {Object.keys(updatedData).map((fieldKey, index) => {
+            const fieldData = updatedData[fieldKey];
             return (
-              <div key={index} className={`${formDataList[formEle].class}`}>
-                <div className="font-medium font-sans ">
-                  {formDataList[formEle].feildName}
-                </div>
+              <div key={fieldData.id || index} className={`${fieldData.class || ""}`}>
+                <label className={formLabelStyle}>{fieldData.fieldName}</label>
                 <Form
-                  formData={formDataList[formEle]}
-                  handleChange={handleChange}
-                  formValues={values}
-                  touched={touched}
+                  formData={fieldData}
+                  handleChange={handleInputChange}
                   handleBlur={handleBlur}
+                  formValues={values} 
+                  touched={touched}
                   errors={errors}
-                  updatedData={formData}
+                  updatedData={updatedData}
                   setUpdatedData={setUpdatedData}
-                  fieldDomRefs={fieldDomRefs}
                 />
+
+
+                {touched[fieldData.id] && errors[fieldData.id] && (
+                  <span className="text-red-500 text-sm">{errors[fieldData.id]}</span>
+                )}
               </div>
             );
           })}
         </div>
-      ) : (
-        <Form
-          formData={formDataList}
-          handleChange={(element: string) => handleChange(element)}
-          formValues={values}
-          touched={touched}
-          handleBlur={handleBlur}
-          errors={errors}
-          updatedData={formData}
-          setUpdatedData={setUpdatedData}
-          fieldDomRefs={fieldDomRefs}
-        />
-      );
 
-    return (
-      <div
-        className={`${formDataList?.visible === false && "hidden"}`}
-        key={index}
-      >
-        {/* {formFieldsLabel !== "noLabel" && !showNoLabel && (
-          <div className={formLabelStyle}>{formFieldsLabel}</div>
-        )} */}
-        {form}
-      </div>
-    );
-  };
-
-  const isDisabled = () => {
-    const isEnabled = Object.values(values).map((e: any) =>
-      !e ? true : false
-    );
-    if (isEnabled && Object.keys(errors).length > 0) {
-      return isEnabled;
-    } else {
-      return false;
-    }
-  };
-
-  return (
-    <div>
-      {formHeading && (
-        <h3 className={`font-bold text-xl mb-4 ${headingStyle}`}>
-          {formHeading}
-        </h3>
-      )}
-      {formSubHeading && (
-        <h3
-          className={`font-bold text-base tracking-wide text-secondary mb-10 ${headingStyle}`}
-        >
-          {formSubHeading}
-        </h3>
-      )}
-      {buttonPlace && (
+        {/* ✅ Submit & Reset Buttons Inside Form */}
         <div className={btnStyle}>
-          {btnConfig?.map((btn: any, index: number) => (
-            <div key={index}>
-              <Button
-                type={btn.type}
-                size={btn.size}
-                onClick={
-                  btn.type === "reset"
-                    ? resetDataHandler
-                    : btn.onClick || handleSubmit
-                }
-                variant={btn.variant}
-                className={btn.className}
-                precedingText={btn.precedingText}
-                loading={btn.loading}
-                disabled={btn.disabled}
-                onSubmit={btn.onSubmit && isDisabled()}
-              >
-                {btn.children}
-              </Button>
-            </div>
-          ))}
-        </div>
-      )}
+          {btnConfig?.map((btn, index) => (
+            <Button
+              key={index}
+              type={btn.type}
+              size={btn.size}
+              onClick={btn.onClick ? btn.onClick : btn.type === "reset" ? resetDataHandler : undefined}
+              variant={btn.variant}
+              className={btn.className}
+              precedingText={btn.precedingText}
+              loading={btn.loading}
+              disabled={btn.disabled}
+            >
+              {btn.children}
+            </Button>
+  ))}
+</div>
 
-      <form noValidate className={`${formStyle}`}>
-        {Object.keys(updatedData).map((formFieldsLabel: any, index) => {
-          return (
-            <div key={index}>
-              {formRender(
-                updatedData[formFieldsLabel].config,
-                updatedData[formFieldsLabel].className,
-                index
-              )}
-            </div>
-          );
-        })}
       </form>
-
-      {!buttonPlace && (
-        <div className={btnStyle}>
-          {btnConfig?.map((btn: any, index: number) => (
-            <div key={index}>
-              <Button
-                type={btn.type}
-                size={btn.size}
-                onClick={
-                  btn.type === "reset"
-                    ? resetDataHandler
-                    : btn.onClick || handleSubmit
-                }
-                variant={btn.variant}
-                className={btn.className}
-                precedingText={btn.precedingText}
-                loading={btn.loading}
-                disabled={btn.disabled}
-                onSubmit={btn.onSubmit && isDisabled()}
-              >
-                {btn.children}
-              </Button>
-            </div>
-          ))}
-        </div>
-      )}
-      <style>{`
-        .form-grid {
-          grid-template-columns: repeat(${formColumn || 1}, 1fr);
-          grid-column-gap: 4.5rem;
-          grid-row-gap: ${formColumn && (formColumn > 1 ? "2rem" : "1rem")};
-        }
-
-        .form-grid:nth-child(n-1){
-          margin-bottom:${formColumn && formColumn > 1 && "2rem"};
-        }
-
-        @media screen and (max-width: 768px) {
-          .form-grid {
-            grid-template-columns: repeat(1, 1fr);
-          }
-        }
-      `}</style>
     </div>
   );
 };

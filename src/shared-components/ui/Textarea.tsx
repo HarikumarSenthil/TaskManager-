@@ -92,7 +92,7 @@ const TextArea = ({
           disabled={disabled}
           maxLength={maxLength}
           readOnly={readOnly}
-          rows={rows}
+          rows={4}
           {...props}
         />
        

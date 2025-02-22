@@ -12,53 +12,57 @@ import Upload from "./Upload";
 import Checkbox from "./Checkbox";
 import SearchBar from "../components/SearchBar";
 import CheckboxList from "./CheckboxList";
+import RadioButton from "./RadioButton";
+import { EventEmitter } from "stream";
 
 const Form = ({
   formData,
-  handleChange,
-  handleBlur,
-  formValues,
-  touched,
-  errors,
-  updatedData,
-  setUpdatedData,
-  fieldDomRefs,
+  handleChange = () => {},
+  handleBlur = () => {},
+  formValues = {},
+  touched = {},
+  errors = {},
+  updatedData = {},
+  setUpdatedData = () => {},
+  fieldDomRefs = {},
+
 }: {
   formData: any;
-  handleChange?: any;
-  handleBlur?: any;
-  formValues?: any;
-  touched?: any;
-  errors?: any;
+  handleChange?: (event: any) => void;
+  handleBlur?: (event: any) => void;
+  formValues?: Record<string, any>;
+  touched?: Record<string, boolean>;
+  errors?: Record<string, string>;
   updatedData?: any;
-  setUpdatedData?: any;
-  fieldDomRefs?: any;
+  setUpdatedData?: (data: any) => void;
+  fieldDomRefs?: Record<string, any>;
+
 }) => {
+
+
+
   const handleFormChange = (event: any, element?: any) => {
-    let filterField: any = (condition: any) =>
-      Object.values(updatedData).filter((el: any) => {
-        return el.name === condition;
-      });
-    if (element?.dependencies) {
-      element.dependencies.forEach((item: any) => {
-        switch (item.type) {
-          case "visibility":
-            {
-              const fieldToBeUpdated = filterField(item.field);
-              if (!item?.values?.includes(event.target.value)) {
-                fieldToBeUpdated[0].visible = false;
-                setUpdatedData(updatedData);
-              } else {
-                fieldToBeUpdated[0].visible = true;
-                setUpdatedData(updatedData);
-              }
-            }
-            break;
-        }
-      });
+    const { name, value } = event.target;
+  
+    setUpdatedData((prevData: any) => {
+      const newData = {
+        ...prevData,
+        [name]: {
+          ...(prevData[name] || {}), 
+          value: value, 
+        },
+      };
+      return newData;
+    });
+    if (typeof handleChange === "function") {
+      handleChange(event);
     }
-    handleChange(event);
   };
+  
+  
+  useEffect(() => {
+  }, [updatedData]); 
+  
 
   const getInputValue = (element: any) => {
     let value;
@@ -66,8 +70,8 @@ const Form = ({
     if (formValues && formValues[element.name] !== undefined) {
       value = formValues[element.name];
     }
-
     return value;
+    // return updatedData[element.name]?.value || "";
   };
 
   const handleFormBlur = async (event: any, element?: any, check?: boolean) => {
@@ -81,7 +85,7 @@ const Form = ({
         }, delay);
       }
     }
-    // !check && (await handleBlur(event));
+   
     await handleBlur(event);
   };
 
@@ -102,30 +106,51 @@ const Form = ({
   };
 
   const renderSwitch = (element: any) => {
+    console.log("Error Message!!!!...", errors)
     switch (element.elementType) {
+
+    
+
+      case "FormRadio":
+      return (
+       <div key={element.id} className="flex flex-row justify-around mt-4">
+         {element.options.map((option: string, index: number) => (
+        <RadioButton
+          key={`${element.id}-${index}`}
+          name={element.fieldName}
+          id={`${element.id}-${index}`}
+          label={option}  
+          value={option}  
+          checked={element.value === option|| getInputValue(element.value) ===option} 
+          onChange={(event) => handleFormChange(event, element)}
+        />
+      ))}
+    </div>
+  );
+
       case "FormInput":
         return (
           <div key={element.id}>
-            <Input
-              key={element.id}
-              type={element.type}
-              label={element.label}
-              placeholder={element.placeholder}
-              onChange={(event) => handleFormChange(event, element)}
-              className={element.className}
-              onBlur={(event) => handleFormBlur(event)}
-              disablePaste={element.disablePaste}
-              value={getInputValue(element)}
-              name={element.name}
-              touched={getTouchedValue(element)}
-              error={getErrors(element)}
-              disabled={element.disabled}
-              width={element.width}
-              inputStyle={element.inputStyle}
-              visible={element.visible}
-              forwardedRef={fieldDomRefs[element.name]}
-              feildStatus={element.flagStatus}
-            />
+           <Input
+                key={element.id}
+                type={element.type}
+                label={element.label}
+                placeholder={element.placeholder}
+                onChange={(event) => handleFormChange(event, element)}
+                className={element.className}
+                onBlur={(event) => handleFormBlur(event)}
+                disablePaste={element.disablePaste}
+                value={getInputValue(element)|| element.value } 
+                name={element.name || element.fieldName || element.id}
+                touched={touched[element.fieldName || element.id ]}
+                error={errors[element.fieldName || element.name]}
+                disabled={element.disabled}
+                width={element.width}
+                inputStyle={element.inputStyle}
+                visible={element.visible}
+                feildStatus={element.flagStatus}
+              />
+
           </div>
         );
       case "FormToggleSwitch":
@@ -147,21 +172,20 @@ const Form = ({
       case "FormDropdown":
         return (
           <div key={element.id}>
-            <Dropdown
-              name={element.name}
-              options={element.options}
-              height={element.height}
-              onChange={(event) => handleFormChange(event, element)}
-              className={element.className}
-              value={getInputValue(element)}
-              placeholder={element.placeholder}
-              width={element.width}
-              onBlur={(event) => handleFormBlur(event, element, true)}
-              error={getErrors(element)}
-              touched={getTouchedValue(element)}
-              key={element.id}
-              disabled={element.disabled}
-              feildStatus={element.flagStatus}
+            <Dropdown name={element.fieldName} 
+            options={element.options}
+            height={element.height}
+            onChange={(event) => handleChange(event)} 
+            className={element.className}
+            value={formData[element.value]|| "SelectPriority ▼" || [element.value]} 
+            placeholder={element.placeholder}
+            width={element.width}
+            onBlur={(event) => handleBlur(event)}
+            error={errors[element.fieldName]}
+            touched={getTouchedValue(element)}
+            key={element.id}
+            disabled={element.disabled}
+            feildStatus={element.flagStatus}
             />
           </div>
         );
@@ -247,37 +271,37 @@ const Form = ({
             <TextArea
               key={element.id}
               placeholder={element.placeholder}
-              onChange={handleFormChange}
+              onChange={(event) => handleFormChange(event, element)}
               classname={element.className}
               onBlur={handleBlur}
               width={element.width}
               disablePaste={element.disablePaste}
-              value={getInputValue(element)}
-              name={element.name}
-              touched={touched[element.name]}
-              error={errors[element.name]}
+              value={getInputValue(element)|| element.value } 
+              name={element.fieldName || element.id}
+              touched={touched[element.fieldName || element.id ]}
+              error={errors[element.fieldName || element.name]}
               disabled={element.disabled}
               feildStatus={element.flagStatus}
             />
           </div>
         );
-      case "FormRadio":
-        return (
-          <div key={element.id}>
-            <RadioList
-              options={element.options}
-              name={element.name}
-              onChange={handleFormChange}
-              onBlur={(event) => handleFormBlur(event, element)}
-              checked={getInputValue(element) || ""}
-              error={errors[element.name]}
-              clssName={element.className}
-              disabled={element.disabled}
-              touched={getTouchedValue(element)}
-              feildStatus={element.flagStatus}
-            />
-          </div>
-        );
+        case "FormRadio":
+          return (
+            <div key={element.id}>
+              <RadioList
+                options={element.options}
+                name={element.name}
+                onChange={handleFormChange}
+                onBlur={(event) => handleFormBlur(event, element)}
+                checked={getInputValue(element) || ""}
+                error={errors[element.name]}
+                clssName={element.className}
+                disabled={element.disabled}
+                touched={getTouchedValue(element)}
+                feildStatus={element.flagStatus}
+              />
+            </div>
+          );
       case "FormUploadInput":
         return (
           <div>

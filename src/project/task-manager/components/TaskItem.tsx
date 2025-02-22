@@ -9,6 +9,7 @@ interface TaskItemProps {
 }
 
 const TaskItem: React.FC<TaskItemProps> = ({ task, onEdit, onDelete }) => {
+  console.log("Card Data For Display!!!!!....." ,task)
   const btnConfig = [
     {
       type: "button",
@@ -18,7 +19,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, onEdit, onDelete }) => {
     },
   ];
 
-  // Assigning color based on priority
+  
   const priorityColor = task.priority === "high"
     ? "text-red-500"
     : task.priority === "medium"
